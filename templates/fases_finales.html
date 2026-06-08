@@ -1,0 +1,109 @@
+<h1>Pronósticos: Fases Finales</h1>
+
+<a href="{{ url_for('dashboard') }}">
+    Volver al Dashboard
+</a>
+
+{% for fase in ["16avos", "Octavos", "Cuartos", "Semis", "Final"] %}
+
+    <h2>{{ fase }}</h2>
+
+    {% for p in partidos_calculados if p['grupo'] == fase %}
+
+        {% set bloqueado =
+            "Ganador" in p['equipo_local'] or
+            "Ganador" in p['equipo_visitante'] or
+            "Perdedor" in p['equipo_local'] or
+            "Perdedor" in p['equipo_visitante']
+        %}
+
+        <div class="partido-card">
+
+            <span>{{ p['equipo_local'] }}</span>
+
+            <input
+                type="number"
+                id="local_{{ p['id'] }}"
+                value="{{ p['goles_local'] if p['goles_local'] is not none else '' }}"
+                onchange="guardarPronostico({{ p['id'] }})"
+                {% if bloqueado %}disabled{% endif %}
+            >
+
+            vs
+
+            <input
+                type="number"
+                id="visitante_{{ p['id'] }}"
+                value="{{ p['goles_visitante'] if p['goles_visitante'] is not none else '' }}"
+                onchange="guardarPronostico({{ p['id'] }})"
+                {% if bloqueado %}disabled{% endif %}
+            >
+
+            <span>{{ p['equipo_visitante'] }}</span>
+
+            {% if bloqueado %}
+                <br>
+                <small style="color:red;">
+                    Esperando resultados de la ronda anterior
+                </small>
+            {% endif %}
+
+        </div>
+
+        <br>
+
+    {% endfor %}
+
+{% endfor %}
+
+<script>
+
+function guardarPronostico(id) {
+
+    let gl = document.getElementById('local_' + id).value;
+    let gv = document.getElementById('visitante_' + id).value;
+
+    if (gl !== "" && gv !== "") {
+
+        fetch('/guardar_pronostico/' + id, {
+
+            method: 'POST',
+
+            headers: {
+                'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify({
+                goles_local: gl,
+                goles_visitante: gv
+            })
+
+        })
+
+        .then(response => response.json())
+
+        .then(data => {
+
+            if (data.success) {
+
+                // Recargar para recalcular llaves
+                window.location.reload();
+
+            } else {
+
+                alert("Error: " + data.message);
+
+            }
+
+        })
+
+        .catch(error => {
+
+            console.error(error);
+            alert("Error al guardar el pronóstico");
+
+        });
+    }
+}
+
+</script>

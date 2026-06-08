@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Llaves - Polla Mundial 2026</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Estilos específicos para la estructura del torneo */
+        .bracket-container {
+            overflow-x: auto;
+            padding-bottom: 2rem;
+        }
+        .bracket-wrapper {
+            display: flex;
+            gap: 3rem;
+            min-width: 1400px; 
+            height: 1400px; /* CRUCIAL: Fuerza la altura para que las llaves se alineen solas */
+            padding: 10px 0;
+        }
+        .bracket-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around; /* Distribuye el espacio de forma equitativa */
+            height: 100%; /* Hereda los 1400px del wrapper */
+            width: 260px;
+            flex-shrink: 0;
+        }
+        .phase-title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #2d3748;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+        .card-llave {
+            background: #1a233a; 
+            border-radius: 10px; 
+            border: 1px solid #2d3748; 
+            padding: 10px 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .card-llave:hover {
+            transform: scale(1.03);
+            border-color: #ffc107;
+        }
+        .team-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+        }
+        .team-row:first-child {
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            margin-bottom: 4px;
+        }
+        .score-box {
+            background: #000;
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 6px;
+            min-width: 32px;
+            text-align: center;
+            font-weight: bold;
+            padding: 2px 4px;
+            font-size: 0.9rem;
+        }
+        .team-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+            width: 80%;
+        }
+        .team-info img {
+            width: 26px;
+            height: 18px;
+            object-fit: cover;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+        .team-name {
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body class="bg-dark text-white">
+
+<nav class="navbar navbar-dark bg-black shadow-sm">
+    <div class="container">
+        <span class="navbar-brand mb-0 h1">⚽ Polla Mundial 2026</span>
+        <div class="d-flex align-items-center">
+            {% if usuario %}
+                <span class="me-3 text-white-50 small">{{ usuario.correo }}</span>
+                {% if usuario.admin %}
+                    <a href="/admin" class="btn btn-sm btn-warning me-2">👑 Admin</a>
+                {% endif %}
+            {% endif %}
+
+            <div class="container text-center my-4">
+    <div class="btn-group" role="group" aria-label="Selector de Llaves">
+        <a href="{{ url_for('llaves', tipo='real') }}" 
+           class="btn {% if tipo == 'real' %}btn-warning text-dark fw-bold{% else %}btn-outline-warning text-white{% endif %}">
+            🏆 Resultados Reales
+        </a>
+        
+        <a href="{{ url_for('llaves', tipo='pronostico') }}" 
+           class="btn {% if tipo == 'pronostico' %}btn-warning text-dark fw-bold{% else %}btn-outline-warning text-white{% endif %}">
+            🔮 Mis Pronósticos
+        </a>
+    </div>
+    
+    <p class="text-muted mt-2 small">
+        {% if tipo == 'real' %}
+            Viendo la progresión oficial del mundial según los partidos jugados en la realidad.
+        {% else %}
+            Viendo tu simulación personalizada calculada a partir de todos tus pronósticos guardados.
+        {% endif %}
+    </p>
+</div>
+            <a href="/dashboard" class="btn btn-sm btn-outline-light me-2">Volver</a>
+            <a href="/logout" class="btn btn-sm btn-danger">Salir</a>
+        
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid mt-4 px-4">
+    <div class="mb-4">
+        <h1 class="text-warning fw-bold mb-0">🏆 Fase Final</h1>
+        <p class="text-white-50 mb-0">Sigue la evolución de las eliminatorias en tiempo real.</p>
+    </div>
+
+    <div class="bracket-container">
+        <div class="bracket-wrapper">
+
+            <div class="bracket-col">
+                <h6 class="phase-title text-secondary">16avos DE FINAL</h6>
+                {% for p in partidos if p.grupo == '16avos' %}
+                <div class="card-llave">
+                    <div class="team-row">
+                        <div class="team-info">
+                            {% set b_local = bandera(p.equipo_local) %}
+                            <img src="{{ url_for('static', filename='img/banderas/' + (b_local if b_local else 'default.png')) }}" class="border border-secondary">
+                            <span class="fw-bold team-name {% if 'Grupo' in p.equipo_local or 'Partido' in p.equipo_local %}text-white-50{% else %}text-white{% endif %}">{{ p.equipo_local }}</span>
+                        </div>
+                        <div class="score-box">{{ p.goles_local if p.goles_local is not none else '-' }}</div>
+                    </div>
+                    <div class="team-row">
+                        <div class="team-info">
+                            {% set b_vis = bandera(p.equipo_visitante) %}
+                            <img src="{{ url_for('static', filename='img/banderas/' + (b_vis if b_vis else 'default.png')) }}" class="border border-secondary">
+                            <span class="fw-bold team-name {% if 'Grupo' in p.equipo_visitante or 'Partido' in p.equipo_visitante %}text-white-50{% else %}text-white{% endif %}">{{ p.equipo_visitante }}</span>
+                        </div>
+                        <div class="score-box">{{ p.goles_visitante if p.goles_visitante is not none else '-' }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="bracket-col">
+                <h6 class="phase-title text-secondary">OCTAVOS DE FINAL</h6>
+                {% for p in partidos if p.grupo == 'Octavos' %}
+                <div class="card-llave">
+                    <div class="team-row">
+                        <div class="team-info">
+                            {% set b_local = bandera(p.equipo_local) %}
+                            <img src="{{ url_for('static', filename='img/banderas/' + (b_local if b_local else 'default.png')) }}" class="border border-secondary">
+                            <span class="fw-bold team-name {% if 'Grupo' in p.equipo_local or 'Partido' in p.equipo_local %}text-white-50{% else %}text-white{% endif %}">{{ p.equipo_local }}</span>
+                        </div>
+                        <div class="score-box">{{ p.goles_local if p.goles_local is not none else '-' }}</div>
+                    </div>
+                    <div class="team-row">
+                        <div class="team-info">
+                            {% set b_vis = bandera(p.equipo_visitante) %}
+                            <img src="{{ url_for('static', filename='img/banderas/' + (b_vis if b_vis else 'default.png')) }}" class="border border-secondary">
+                            <span class="fw-bold team-name {% if 'Grupo' in p.equipo_visitante or 'Partido' in p.equipo_visitante %}text-white-50{% else %}text-white{% endif %}">{{ p.equipo_visitante }}</span>
+                        </div>
+                        <div class="score-box">{{ p.goles_visitante if p.goles_visitante is not none else '-' }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="bracket-col">
+                <h6 class="phase-title text-info">CUARTOS DE FINAL</h6>
+                {% for p in partidos if p.grupo == 'Cuartos' %}
+                <div class="card-llave">
+                    <div class="team-row">
+                        <div class="team-info">
+                            {% set b_local = bandera(p.equipo_local) %}
+                            <img src="{{ url_for('static', filename='img/banderas/' + (b_local if b_local else 'default.png')) }}" class="border border-secondary">
+                            <span class="fw-bold team-name {% if 'Grupo' in p.equipo_local or 'Partido' in p.equipo_local %}text-white-50{% else %}text-white{% endif %}">{{ p.equipo_local }}</span>
+                        </div>
+                        <div class="score-box">{{ p.goles_local if p.goles_local is not none else '-' }}</div>
+                    </div>
+                    <div class="team-row">
+                        <div class="team-info">
+                            {% set b_vis = bandera(p.equipo_visitante) %}
+                            <img src="{{ url_for('static', filename='img/banderas/' + (b_vis if b_vis else 'default.png')) }}" class="border border-secondary">
+                            <span class="fw-bold team-name {% if 'Grupo' in p.equipo_visitante or 'Partido' in p.equipo_visitante %}text-white-50{% else %}text-white{% endif %}">{{ p.equipo_visitante }}</span>
+                        </div>
+                        <div class="score-box">{{ p.goles_visitante if p.goles_visitante is not none else '-' }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="bracket-col">
+                <h6 class="phase-title" style="color: #ff8c00;">SEMIFINALES</h6>
+                {% for p in partidos if p.grupo == 'Semis' %}
+                <div class="card-llave">
+                    <div class="team-row">
+                        <div class="team-info">
+                            {% set b_local = bandera(p.equipo_local) %}
+                            <img src="{{ url_for('static', filename='img/banderas/' + (b_local if b_local else 'default.png')) }}" class="border border-secondary">
+                            <span class="fw-bold team-name {% if 'Grupo' in p.equipo_local or 'Partido' in p.equipo_local %}text-white-50{% else %}text-white{% endif %}">{{ p.equipo_local }}</span>
+                        </div>
+                        <div class="score-box">{{ p.goles_local if p.goles_local is not none else '-' }}</div>
+                    </div>
+                    <div class="team-row">
+                        <div class="team-info">
+                            {% set b_vis = bandera(p.equipo_visitante) %}
+                            <img src="{{ url_for('static', filename='img/banderas/' + (b_vis if b_vis else 'default.png')) }}" class="border border-secondary">
+                            <span class="fw-bold team-name {% if 'Grupo' in p.equipo_visitante or 'Partido' in p.equipo_visitante %}text-white-50{% else %}text-white{% endif %}">{{ p.equipo_visitante }}</span>
+                        </div>
+                        <div class="score-box">{{ p.goles_visitante if p.goles_visitante is not none else '-' }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="bracket-col">
+                <h6 class="phase-title text-warning">🏆 LA GRAN FINAL</h6>
+                {% for p in partidos if p.grupo == 'Final' %}
+                <div class="card-llave" style="border-color: #ffc107; box-shadow: 0 0 25px rgba(255, 193, 7, 0.25);">
+                    <div class="team-row">
+                        <div class="team-info">
+                            {% set b_local = bandera(p.equipo_local) %}
+                            <img src="{{ url_for('static', filename='img/banderas/' + (b_local if b_local else 'default.png')) }}" class="border border-secondary">
+                            <span class="fw-bold team-name text-white">{{ p.equipo_local }}</span>
+                        </div>
+                        <div class="score-box bg-warning text-dark fs-5 py-1 px-2">
+                            {{ p.goles_local if p.goles_local is not none else '-' }}
+                        </div>
+                    </div>
+                    <div class="team-row">
+                        <div class="team-info">
+                            {% set b_vis = bandera(p.equipo_visitante) %}
+                            <img src="{{ url_for('static', filename='img/banderas/' + (b_vis if b_vis else 'default.png')) }}" class="border border-secondary">
+                            <span class="fw-bold team-name text-white">{{ p.equipo_visitante }}</span>
+                        </div>
+                        <div class="score-box bg-warning text-dark fs-5 py-1 px-2">
+                            {{ p.goles_visitante if p.goles_visitante is not none else '-' }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

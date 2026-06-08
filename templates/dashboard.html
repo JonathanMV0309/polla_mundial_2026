@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Polla Mundial 2026 L&H</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body class="bg-dark text-white">
+
+<!-- NAVBAR -->
+
+<nav class="navbar navbar-dark bg-black">
+
+    <div class="container">
+
+        <span class="navbar-brand mb-0 h1">
+            ⚽ Polla Mundial 2026 L&H
+        </span>
+
+        <div class="d-flex align-items-center">
+
+            <span class="me-3">
+                {{ usuario.correo }}
+            </span>
+
+            {% if current_user.is_authenticated and current_user.admin %}
+    <a href="/admin" class="btn btn-warning me-2">👑 Admin</a>
+{% endif %}
+
+            <a
+                href="/logout"
+                class="btn btn-danger"
+            >
+                Salir
+            </a>
+
+        </div>
+
+    </div>
+
+</nav>
+
+<!-- CONTENIDO -->
+
+<div class="container mt-5">
+
+    <!-- HERO FIFA -->
+
+<div class="hero-banner">
+    <div class="row align-items-center">
+        
+        <div class="col-md-3 text-center">
+            <div class="logo-mundial">
+                <img src="{{ url_for('static', filename='img/mi_logo/logo_empresa.jpg') }}" 
+                     alt="Logo L&H" 
+                     style="height: 200px; width: auto; object-fit: contain;">
+            </div>
+        </div>
+
+        <div class="col-md-6 text-center">
+            <h1 class="display-4 fw-bold">FIFA WORLD CUP 2026 L&H</h1>
+            <p class="lead">Sistema Oficial de Pronósticos</p>
+            <h4>👋 Bienvenido {{ usuario.correo.split('@')[0] }}</h4>
+        </div>
+
+        <div class="col-md-3 text-center">
+            <div class="contador-mundial">
+                <h5>⏳ Inicio Mundial</h5>
+                <div id="dias-mundial" class="display-5 fw-bold">...</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+    <hr class="my-4">
+
+
+
+<div class="d-flex flex-wrap justify-content-center gap-2">
+    <a href="/dashboard" class="btn btn-primary">
+        ⚽ Partidos
+    </a>
+    <a href="/grupos" class="btn btn-success">
+        📊 Grupos
+    </a>
+    <a href="/terceros" class="btn btn-warning">
+        🥉 Mejores terceros
+    </a>
+    <a href="/llaves" class="btn btn-danger">
+        🏆 Llaves
+    </a>
+
+    <a href="{{ url_for('mis_llaves') }}"
+   class="btn btn-warning">
+    🏆 Mis Llaves
+</a>
+    
+    
+    <a href="/fase-grupos" class="btn btn-light fw-bold text-dark border-warning">
+        {% if current_user.admin %}
+            ⚙️ Administrar Partidos
+        {% else %}
+            📝 Llenar Pronósticos Rápidos
+        {% endif %}
+    </a>
+</div>
+
+
+<div class="alert alert-warning text-center shadow-lg mt-4" id="contador-cierre">
+
+    <h4 class="mb-2">
+        🔒 Cierre Global de Pronósticos
+    </h4>
+
+    <h2 id="tiempo-cierre" class="fw-bold">
+        Calculando...
+    </h2>
+
+    <small>
+        Todos los pronósticos se bloquearán cuando comience el Mundial
+        (11 de junio de 2026).
+    </small>
+
+</div>
+
+
+   <div class="row mb-5">
+
+    <!-- PUNTOS -->
+    <div class="col-md-4 mb-3">
+
+        <div class="card-stats text-center p-4">
+
+            <h5>🏆 Mis Puntos</h5>
+
+            <div class="numero">
+                {{ puntos }}
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- RANKING -->
+    <div class="col-md-4 mb-3">
+
+        <div class="card-stats text-center p-4">
+
+            <h5>📊 Ranking</h5>
+
+            <div class="numero">
+
+                {% for u in ranking %}
+                    {% if u.id == usuario.id %}
+                        #{{ loop.index }}
+                    {% endif %}
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- MIS PRONOSTICOS -->
+    <div class="col-md-4 mb-3">
+
+        <div class="card-stats text-center p-4">
+
+            <h5>⚽ Mis Pronósticos</h5>
+
+            <div class="numero">
+                {{ mis_pronosticos }}
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+    
+
+</div>
+
+        <!-- PRONOSTICOS -->
+
+        <!-- PARTIDOS -->
+
+<div class="filtros-mundial mb-4">
+
+    <div class="row align-items-center">
+
+        <div class="col-md-6">
+
+            <h5 class="text-warning mb-1">
+                ⚽ Filtrar partidos
+            </h5>
+
+            <small class="text-light opacity-75">
+                Selecciona un grupo para ver sus encuentros
+            </small>
+
+        </div>
+
+        <div class="col-md-6 text-md-end mt-3 mt-md-0">
+
+            <select id="filtroGrupo" class="form-select filtro-grupo">
+
+                <option value="todos">🌎 Todos los grupos</option>
+
+                <option value="A">Grupo A</option>
+                <option value="B">Grupo B</option>
+                <option value="C">Grupo C</option>
+                <option value="D">Grupo D</option>
+                <option value="E">Grupo E</option>
+                <option value="F">Grupo F</option>
+                <option value="G">Grupo G</option>
+                <option value="H">Grupo H</option>
+                <option value="I">Grupo I</option>
+                <option value="J">Grupo J</option>
+                <option value="K">Grupo K</option>
+                <option value="L">Grupo L</option>
+
+            </select>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+    <!-- TABLA RANKING -->
+
+    <h2 class="mb-4 text-warning">
+    🏆 Ranking General
+</h2>
+
+<div class="table-responsive mb-5">
+    <table class="table table-dark table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Usuario</th>
+                <th>Puntos</th>
+                <th>Llave</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for usuario_rank in ranking %}
+            <tr>
+                <td>
+                    {% if loop.index == 1 %}
+                        🥇
+                    {% elif loop.index == 2 %}
+                        🥈
+                    {% elif loop.index == 3 %}
+                        🥉
+                    {% else %}
+                        {{ loop.index }}
+                    {% endif %}
+                </td>
+
+                <td>
+                    {{ usuario_rank.correo.split('@')[0] }}
+                </td>
+
+                <td>
+                    {{ usuario_rank.puntos }}
+                </td>
+
+                <td>
+                    <a
+    href="/llaves?tipo=pronostico&usuario_id={{ usuario_rank.id }}"
+    class="btn btn-sm btn-warning"
+>
+    👁️ Ver Llave
+</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+    <!-- PARTIDOS -->
+
+     <!-- PARTIDOS PRONOSTICADOS -->
+
+<h2 class="mb-4 text-warning">
+    📌 Mis Pronósticos
+</h2>
+
+<div class="row">
+
+{% for partido in partidos_pronosticados %}
+
+    {% set tiene_resultado = partido.goles_local is not none and partido.goles_visitante is not none %}
+    {% set acerto = tiene_resultado and pronosticos_dict[partido.id].pred_local == partido.goles_local and pronosticos_dict[partido.id].pred_visitante == partido.goles_visitante %}
+
+    {% set estilo_borde = '' %}
+    {% if tiene_resultado %}
+        {% if acerto %}
+            {% set estilo_borde = 'border: 2px solid #198754; box-shadow: 0 0 15px rgba(25, 135, 84, 0.4) !important;' %}
+        {% else %}
+            {% set estilo_borde = 'border: 2px solid #dc3545; box-shadow: 0 0 15px rgba(220, 53, 69, 0.4) !important;' %}
+        {% endif %}
+    {% endif %}
+
+<div class="col-lg-4 mb-4 partido-card"
+     data-grupo="{{ partido.grupo }}">
+
+    <div class="card-partido p-4 h-100 shadow" style="{{ estilo_borde }}">
+
+        <div class="d-flex justify-content-between mb-3">
+    <span class="grupo">
+        Grupo {{ partido.grupo }}
+    </span>
+
+     
+      >
+    <span class="countdown" id="timer-{{ partido.id }}" data-fecha="{{ partido.fecha_iso }}">
+    Cargando...
+</span>
+
+</div>
+
+        <div class="d-flex justify-content-center align-items-center my-3">
+            
+            <div class="text-center mx-3">
+                <img src="{{ url_for('static', filename='img/banderas/' + bandera(partido.equipo_local)) }}" 
+                     width="60" 
+                     class="mb-2 shadow-sm rounded" 
+                     alt="{{ partido.equipo_local }}">
+                <h4 class="mb-0">{{ partido.equipo_local }}</h4>
+            </div>
+
+            <div class="vs mx-2 text-warning fw-bold fs-4">
+                VS
+            </div>
+
+            <div class="text-center mx-3">
+                <img src="{{ url_for('static', filename='img/banderas/' + bandera(partido.equipo_visitante)) }}" 
+                     width="60" 
+                     class="mb-2 shadow-sm rounded" 
+                     alt="{{ partido.equipo_visitante }}">
+                <h4 class="mb-0">{{ partido.equipo_visitante }}</h4>
+            </div>
+
+        </div>
+
+        <div class="bg-warning text-dark rounded p-3 mt-3 text-center shadow-sm">
+            <strong style="font-size: 0.8rem; text-transform: uppercase; display: block; margin-bottom: 4px; opacity: 0.85;">
+                📌 Tu Pronóstico
+            </strong>
+               <h3 class="fw-bolder mb-0">
+    {{ pronosticos_dict[partido.id].pred_local }}
+    -
+    {{ pronosticos_dict[partido.id].pred_visitante }}
+</h3>
+
+{% if pronosticos_dict[partido.id].pred_penales_local is not none %}
+<small class="text-dark">
+    Penales:
+    {{ pronosticos_dict[partido.id].pred_penales_local }}
+    -
+    {{ pronosticos_dict[partido.id].pred_penales_visitante }}
+</small>
+{% endif %}
+        </div>
+
+        {% if tiene_resultado %}
+
+<div class="text-center rounded p-2 mt-2 shadow-sm bg-dark border border-warning">
+
+    <div class="fw-bold text-warning mb-2">
+        🏁 Resultado Oficial
+    </div>
+
+    <div class="fs-5 fw-bold text-white">
+        {{ partido.goles_local }} - {{ partido.goles_visitante }}
+    </div>
+
+    {% if partido.id in detalles_puntos %}
+
+    <div class="mt-3">
+
+        <div class="badge bg-warning text-dark fs-6 mb-2">
+            ⭐ {{ detalles_puntos[partido.id].total }} puntos obtenidos
+        </div>
+
+        {% for item in detalles_puntos[partido.id].detalle %}
+            <div class="text-start text-light small py-1">
+                {{ item }}
+            </div>
+        {% endfor %}
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endif %}
+
+        <div class="mt-3 text-start small">
+            <h6 class="text-warning border-bottom border-secondary pb-2 mb-2 d-flex align-items-center">
+                👥 Pronósticos de la comunidad
+            </h6>
+            
+            <div style="max-height: 130px; overflow-y: auto; padding-right: 5px;">
+                {% for p in todos_pronosticos if p.partido_id == partido.id and p.usuario_id != usuario.id %}
+                    <div class="d-flex justify-content-between align-items-center border-bottom border-secondary py-1 text-white-50">
+                        <span>
+                            ⚽ {{ p.usuario.correo.split('@')[0] }}
+                        </span>
+                        <span class="fw-bold text-info">
+                            {{ p.pred_local }} - {{ p.pred_visitante }}
+                        </span>
+                    </div>
+                {% else %}
+                    <p class="text-muted fst-italic mb-0 py-1 text-center">
+                        Nadie más ha pronosticado aún.
+                    </p>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div> </div> {% endfor %}
+
+</div> <hr class="my-5">
+
+<hr class="my-5">
+
+<!-- PARTIDOS PENDIENTES -->
+
+<h2 class="mb-4">
+    ⚽ Partidos Pendientes
+</h2>
+
+<div class="row">
+
+{% for partido in partidos_pendientes %}
+
+<div class="col-lg-4 mb-4 partido-card"
+     data-grupo="{{ partido.grupo }}">
+
+    <div class="card-partido p-4 h-100">
+
+        <div class="d-flex justify-content-between mb-3">
+
+            <span class="grupo">
+                Grupo {{ partido.grupo }}
+            </span>
+
+            <span class="fecha">
+                {{ partido.fecha }}
+            </span>
+
+        </div>
+
+       <div class="d-flex justify-content-center align-items-center my-3 text-center">
+            
+            <div class="mx-2" style="width: 45%;">
+                <img src="{{ url_for('static', filename='img/banderas/' + bandera(partido.equipo_local)) }}" 
+                     width="55" 
+                     class="mb-2 shadow-sm rounded" 
+                     alt="{{ partido.equipo_local }}">
+                <h5 class="mb-0 text-truncate fw-bold">{{ partido.equipo_local }}</h5>
+            </div>
+
+            <div class="vs mx-1 text-warning fw-bold fs-5" style="width: 10%;">
+                VS
+            </div>
+
+            <div class="mx-2" style="width: 45%;">
+                <img src="{{ url_for('static', filename='img/banderas/' + bandera(partido.equipo_visitante)) }}" 
+                     width="55" 
+                     class="mb-2 shadow-sm rounded" 
+                     alt="{{ partido.equipo_visitante }}">
+                <h5 class="mb-0 text-truncate fw-bold">{{ partido.equipo_visitante }}</h5>
+            </div>
+
+        </div>
+        <form class="form-pronostico mt-4"
+      data-partido="{{ partido.id }}">
+    
+    <div class="text-center mb-2">
+        <small class="text-info fw-bold" id="timer-{{ partido.id }}" data-fecha="{{ partido.fecha_iso }}">
+            Cargando...
+        </small>
+    </div>
+
+    <div class="row text-center">
+        <div class="col-5">
+            <input type="number" name="pred_local" min="0" class="form-control" required
+                   {% if pronosticos_cerrados %}disabled{% endif %}>
+        </div>
+        <div class="col-2"><strong>-</strong></div>
+        <div class="col-5">
+            <input type="number" name="pred_visitante" min="0" class="form-control" required
+                   {% if pronosticos_cerrados %}disabled{% endif %}>
+        </div>
+    </div>
+
+    {% if partido.grupo in [
+    '16avos',
+    'Octavos',
+    'Cuartos',
+    'Semis',
+    '3er Puesto',
+    'Final'
+] %}
+
+<div class="text-center mt-3">
+
+    <small class="text-warning">
+        🥅 Penales (solo si pronosticas empate)
+    </small>
+
+    <div class="row justify-content-center mt-2">
+
+        <div class="col-4">
+            <input type="number"
+                   name="pred_penales_local"
+                   min="0"
+                   class="form-control text-center"
+                   placeholder="P">
+        </div>
+
+        <div class="col-1 text-center">
+            -
+        </div>
+
+        <div class="col-4">
+            <input type="number"
+                   name="pred_penales_visitante"
+                   min="0"
+                   class="form-control text-center"
+                   placeholder="P">
+        </div>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+    <div class="text-center mt-3">
+
+    {% if pronosticos_cerrados %}
+        <button type="button"
+                class="btn btn-danger"
+                disabled>
+            🔒 Pronósticos Cerrados
+        </button>
+    {% else %}
+        <button type="submit"
+                class="btn btn-warning">
+            ⚽ Guardar Pronóstico
+        </button>
+    {% endif %}
+
+</div>
+</form>
+
+    </div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+
+<script>
+
+function actualizarMundial(){
+
+    let inicio = new Date("2026-06-11");
+    let ahora = new Date();
+
+    let diferencia = inicio - ahora;
+
+    let dias = Math.floor(
+        diferencia / (1000*60*60*24)
+    );
+
+    document.getElementById(
+        "dias-mundial"
+    ).innerHTML = dias + " días";
+}
+
+actualizarMundial();
+
+</script>
+
+<script>
+function actualizarContadores() {
+    const ahora = new Date().getTime();
+    const timers = document.querySelectorAll('.countdown');
+
+    timers.forEach(el => {
+        const rawDate = el.dataset.fecha;
+        
+        // Si no hay fecha, no hacemos nada
+        if (!rawDate) return;
+
+        const fechaPartido = new Date(rawDate).getTime();
+        const diferencia = fechaPartido - ahora;
+
+        if (diferencia > 0) {
+            const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+            const horas = Math.floor((diferencia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
+            el.innerHTML = `⏱️ ${dias}d ${horas}h ${mins}m`;
+        } else {
+            el.innerHTML = "🔴 Partido en curso";
+        }
+    });
+}
+actualizarContadores();
+setInterval(actualizarContadores, 60000);
+</script>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const filtro = document.getElementById("filtroGrupo");
+
+    filtro.addEventListener("change", () => {
+
+        const grupoSeleccionado = filtro.value;
+
+        document.querySelectorAll(".partido-card")
+            .forEach(card => {
+
+                const grupo = card.dataset.grupo;
+
+                if (
+                    grupoSeleccionado === "todos" ||
+                    grupo === grupoSeleccionado
+                ) {
+
+                    card.style.display = "";
+
+                } else {
+
+                    card.style.display = "none";
+
+                }
+
+            });
+
+    });
+
+});
+
+</script>
+
+<script>
+
+function actualizarCierreGlobal(){
+
+    // 11 junio 2026 - 15:00 Colombia
+    const cierre = new Date("2026-06-11T15:00:00");
+
+    const ahora = new Date();
+
+    const diferencia = cierre - ahora;
+
+    if(diferencia <= 0){
+
+        document.getElementById("tiempo-cierre").innerHTML =
+            "🔒 PRONÓSTICOS CERRADOS";
+
+        return;
+    }
+
+    const dias = Math.floor(
+        diferencia / (1000*60*60*24)
+    );
+
+    const horas = Math.floor(
+        (diferencia % (1000*60*60*24))
+        / (1000*60*60)
+    );
+
+    const minutos = Math.floor(
+        (diferencia % (1000*60*60))
+        / (1000*60)
+    );
+
+    document.getElementById("tiempo-cierre").innerHTML =
+        `${dias}d ${horas}h ${minutos}m`;
+
+}
+
+actualizarCierreGlobal();
+
+setInterval(
+    actualizarCierreGlobal,
+    60000
+);
+
+</script>
+
+<script>
+
+document.querySelectorAll(".form-pronostico").forEach(form => {
+
+    form.addEventListener("submit", async function(e){
+
+        e.preventDefault();
+
+        const partidoId = this.dataset.partido;
+
+        const formData = new FormData(this);
+
+        const respuesta = await fetch(
+            `/pronostico/${partidoId}`,
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+        const data = await respuesta.json();
+
+        if(data.success){
+
+            const boton = this.querySelector("button");
+
+            boton.innerHTML = "✅ Guardado";
+
+            setTimeout(() => {
+                boton.innerHTML = "⚽ Guardar Pronóstico";
+            }, 2000);
+
+        }
+
+    });
+
+});
+
+</script>
+
+
+
+</body>
+
+</html>

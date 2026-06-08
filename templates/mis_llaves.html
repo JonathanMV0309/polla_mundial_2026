@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mis Pronósticos Eliminatorias</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #0b2c6f; color: white; }
+        .llave-fase { background: #1c3f85; border-radius: 20px; padding: 20px; box-shadow: 0 0 15px rgba(0,0,0,.3); margin-bottom: 20px; }
+        .llave-titulo { color: #ffb100; font-weight: bold; text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
+        
+        .llave-partido { 
+            display: grid; grid-template-columns: 1fr auto 1fr auto auto; 
+            align-items: center; gap: 10px; background: #16346f; 
+            padding: 15px; border-radius: 10px; margin-bottom: 10px;
+        }
+        
+        .resultado { width: 50px; text-align: center; background: black; color: white; border: none; border-radius: 4px; padding: 5px; }
+        .resultado:disabled { background: #333; color: #888; }
+        
+        .btn-guardar { background: #ffb100; color: black; font-weight: bold; border: none; }
+        .btn-guardado { background: #2ec4b6 !important; color: white !important; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between mb-4">
+        <h2 style="color:#ffb100;">🏆 Mis Pronósticos</h2>
+        <a href="/dashboard" class="btn btn-warning">⬅ Volver</a>
+    </div>
+
+    <form method="POST">
+        {% set fases = ["16avos", "Octavos", "Cuartos", "Semis", "3er Puesto", "Final"] %}
+
+        {% for fase in fases %}
+        <div class="llave-fase">
+            <div class="llave-titulo">🏆 {{ fase }}</div>
+
+            {% for p in partidos if p.grupo == fase %}
+            <div class="llave-partido">
+                <div class="equipo">
+                    {% if p.bandera_local %}<img src="{{ p.bandera_local }}" width="25"> {% endif %}
+                    {{ p.equipo_local }}
+                </div>
+                <div class="llave-vs">VS</div>
+                <div class="equipo">
+                    {% if p.bandera_visitante %}<img src="{{ p.bandera_visitante }}" width="25"> {% endif %}
+                    {{ p.equipo_visitante }}
+                </div>
+
+                <div class="d-flex align-items-center gap-1">
+                    <input type="number" class="resultado" name="local_{{ p.id }}" value="{{ pronosticos.get(p.id).goles_local if pronosticos.get(p.id) }}" {% if pronosticos.get(p.id) %}disabled{% endif %}>
+                    -
+                    <input type="number" class="resultado" name="visitante_{{ p.id }}" value="{{ pronosticos.get(p.id).goles_visitante if pronosticos.get(p.id) }}" {% if pronosticos.get(p.id) %}disabled{% endif %}>
+                </div>
+
+                <div>
+                    <button type="button" id="btn-{{ p.id }}" 
+                            class="btn btn-sm {% if pronosticos.get(p.id) %}btn-guardado{% else %}btn-guardar{% endif %}"
+                            onclick="guardarPronostico({{ p.id }})" {% if pronosticos.get(p.id) %}disabled{% endif %}>
+                        {% if pronosticos.get(p.id) %}✅{% else %}GUARDAR{% endif %}
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </form>
+</div>
+
+<script>
+function guardarPronostico(partidoId) {
+    let gl = document.querySelector(`[name="local_${partidoId}"]`).value;
+    let gv = document.querySelector(`[name="visitante_${partidoId}"]`).value;
+    const boton = document.getElementById(`btn-${partidoId}`);
+    
+    boton.disabled = true;
+    fetch(`/guardar_pronostico_eliminatoria/${partidoId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goles_local: gl, goles_visitante: gv })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            boton.innerHTML = "✅";
+            boton.classList.add("btn-guardado");
+            document.querySelector(`[name="local_${partidoId}"]`).disabled = true;
+            document.querySelector(`[name="visitante_${partidoId}"]`).disabled = true;
+        } else {
+            alert(data.message);
+            boton.disabled = false;
+        }
+    });
+}
+</script>
+
+</body>
+</html>

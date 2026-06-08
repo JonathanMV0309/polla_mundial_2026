@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Fase de Grupos - Mundial 2026</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            background-color: #0d1b2a; 
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #fca311; 
+            margin-bottom: 30px;
+        }
+        .grupos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .grupo-card {
+            background: #14213d; 
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .grupo-card h3 {
+            text-align: center;
+            color: #fca311;
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 8px;
+            font-size: 1.3rem;
+        }
+        .partido-box {
+            background: rgba(255, 255, 255, 0.04);
+            margin-bottom: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .equipo-linea {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .equipo-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .flag-mini {
+            width: 24px;
+            height: 16px;
+            object-fit: cover;
+            border-radius: 3px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+        }
+        .equipo-info span {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        .input-score {
+            width: 45px;
+            height: 28px;
+            background: #000000;
+            border: 1px solid #444;
+            color: #fff;
+            text-align: center;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .input-score:focus {
+            border-color: #fca311;
+            outline: none;
+        }
+        .btn-save-mini {
+            width: 100%;
+            background: #fca311;
+            color: #000;
+            border: none;
+            padding: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-top: 4px;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+        .btn-save-mini:hover {
+            background: #e59500;
+        }
+        .btn-save-mini.success {
+            background: #2ec4b6 !important;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🏆 {{ 'Tablero de Control: Marcadores Oficiales' if current_user.admin else 'Mis Pronósticos: Fase de Grupos' }}</h1>
+    
+    <div class="grupos-grid">
+        {% for grupo, partidos in partidos_por_grupo.items() %}
+        <div class="grupo-card">
+            <h3>GRUPO {{ grupo }}</h3>
+            
+            {% for p in partidos %}
+            <div class="partido-box">
+                
+                <div class="equipo-linea">
+                    <div class="equipo-info">
+                        <img src="{{ url_for('static', filename='img/banderas/' + bandera(p.equipo_local)) }}" class="flag-mini">
+                        <span>{{ p.equipo_local }}</span>
+                    </div>
+                    <input
+                        type="number"
+                        id="gl-{{ p.id }}"
+                        class="input-score"
+                        placeholder="-"
+                        value="{% if current_user.admin %}{{ p.goles_local if p.goles_local is not none else '' }}{% else %}{{ pronosticos_dict[p.id].pred_local if p.id in pronosticos_dict and pronosticos_dict[p.id].pred_local is not none else '' }}{% endif %}"
+                        {% if not current_user.admin and p.id in pronosticos_dict %}
+                            disabled
+                        {% endif %}
+                    >
+                </div>
+                
+                <div class="equipo-linea">
+                    <div class="equipo-info">
+                        <img src="{{ url_for('static', filename='img/banderas/' + bandera(p.equipo_visitante)) }}" class="flag-mini">
+                        <span>{{ p.equipo_visitante }}</span>
+                    </div>
+                    <input
+                        type="number"
+                        id="gv-{{ p.id }}"
+                        class="input-score"
+                        placeholder="-"
+                        value="{% if current_user.admin %}{{ p.goles_visitante if p.goles_visitante is not none else '' }}{% else %}{{ pronosticos_dict[p.id].pred_visitante if p.id in pronosticos_dict and pronosticos_dict[p.id].pred_visitante is not none else '' }}{% endif %}"
+                        {% if not current_user.admin and p.id in pronosticos_dict %}
+                            disabled
+                        {% endif %}
+                    >
+                </div>
+                
+                <button
+                    id="btn-{{ p.id }}"
+                    onclick="guardarMarcadorRapido({{ p.id }}, this, {{ 'true' if current_user.admin else 'false' }})"
+                    class="btn-save-mini {% if not current_user.admin and p.id in pronosticos_dict %}success{% endif %}"
+                    {% if not current_user.admin and p.id in pronosticos_dict %}disabled{% endif %}
+                >
+                    {% if current_user.admin %}
+                        Guardar Resultado
+                    {% else %}
+                        {% if p.id in pronosticos_dict %}
+                            ✅ Pronóstico Guardado
+                        {% else %}
+                            Guardar Pronóstico
+                        {% endif %}
+                    {% endif %}
+                </button>
+
+                <div id="estado-{{ p.id }}" class="mt-1 text-center">
+                    {% if not current_user.admin and p.id in pronosticos_dict %}
+                        <small style="color:#2ec4b6;font-weight:bold;">
+                            ✓ Pronóstico registrado correctamente
+                        </small>
+                    {% endif %}
+                </div>
+
+                {% if not current_user.admin and p.id in pronosticos_dict %}
+
+                    {% if edicion_habilitada %}
+
+                    <button
+                        type="button"
+                        onclick="habilitarEdicion({{ p.id }})"
+                        style="
+                            width:100%;
+                            margin-top:5px;
+                            background:#1976d2;
+                            color:white;
+                            border:none;
+                            padding:5px;
+                            border-radius:5px;
+                            font-weight:bold;
+                            cursor:pointer;
+                        "
+                    >
+                        ✏️ Editar Pronóstico
+                    </button>
+
+                    {% else %}
+
+                    <div
+                        style="
+                            color:#ffb703;
+                            font-size:0.8rem;
+                            margin-top:5px;
+                            font-weight:bold;
+                            text-align: center;
+                        "
+                    >
+                        🔒 Ediciones cerradas
+                    </div>
+
+                    {% endif %}
+
+                {% endif %}
+
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+    async function guardarMarcadorRapido(partidoId, boton, esAdmin) {
+        const golesLocal = document.getElementById(`gl-${partidoId}`).value;
+        const golesVisitante = document.getElementById(`gv-${partidoId}`).value;
+        
+        if (golesLocal === "" || golesVisitante === "") {
+            alert("Por favor, ingresa ambos marcadores.");
+            return;
+        }
+
+        boton.innerText = "⏳ Guardando...";
+        boton.disabled = true;
+
+        // Si es admin va a la ruta de resultados reales, si es normal va a la de pronósticos
+        const url = esAdmin ? `/resultado/${partidoId}` : `/guardar_pronostico/${partidoId}`;
+
+        try {
+            const respuesta = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    goles_local: golesLocal,
+                    goles_visitante: golesVisitante
+                })
+            });
+            
+            const data = await respuesta.json();
+            
+            if (respuesta.ok && data.success) {
+                if (esAdmin) {
+                    boton.innerText = "✅ Resultado Actualizado";
+                    boton.classList.add("success");
+
+                    setTimeout(() => {
+                        boton.innerText = "Guardar Resultado";
+                        boton.classList.remove("success");
+                        boton.disabled = false;
+                    }, 1500);
+
+                } else {
+                    boton.innerText = "✅ Pronóstico Guardado";
+                    boton.classList.add("success");
+                    boton.disabled = true;
+
+                    const estado = document.getElementById(
+                        `estado-${partidoId}`
+                    );
+
+                    estado.innerHTML = `
+                        <small style="color:#2ec4b6;font-weight:bold;">
+                            ✓ Pronóstico registrado correctamente
+                        </small>
+                    `;
+                    
+                    // Bloquear los inputs de nuevo tras guardar si es usuario normal
+                    document.getElementById(`gl-${partidoId}`).disabled = true;
+                    document.getElementById(`gv-${partidoId}`).disabled = true;
+                }
+            } else {
+                throw new Error(data.message || "Error desconocido");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Error: " + err.message);
+            boton.innerText = esAdmin ? "Guardar Partido" : "Guardar Pronóstico";
+            boton.disabled = false;
+        }
+    }
+
+    function habilitarEdicion(partidoId) {
+
+        document.getElementById(
+            `gl-${partidoId}`
+        ).disabled = false;
+
+        document.getElementById(
+            `gv-${partidoId}`
+        ).disabled = false;
+
+        const boton = document.getElementById(
+            `btn-${partidoId}`
+        );
+
+        boton.disabled = false;
+        boton.innerText = "Guardar Pronóstico";
+        boton.classList.remove("success");
+    }
+    </script>
+</body>
+</html>

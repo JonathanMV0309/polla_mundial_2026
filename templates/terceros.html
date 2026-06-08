@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>Mejores Terceros</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+
+<body class="bg-dark text-white">
+
+<div class="container mt-5">
+
+<h1 class="mb-4">
+🥉 Mejores Terceros Mundial 2026
+</h1>
+
+<a
+    href="/dashboard"
+    class="btn btn-warning mb-4"
+>
+    ⬅ Volver
+</a>
+
+<table class="table table-dark table-hover">
+
+<thead>
+
+<tr>
+
+<th>#</th>
+<th>Grupo</th>
+<th>Equipo</th>
+<th>Puntos</th>
+<th>DG</th>
+<th>GF</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for equipo in terceros %}
+
+<tr>
+
+<td>
+
+{% if loop.index <= 8 %}
+✅
+{% else %}
+❌
+{% endif %}
+
+</td>
+
+<td>{{ equipo.grupo }}</td>
+<td>{{ equipo.equipo }}</td>
+<td>{{ equipo.pts }}</td>
+<td>{{ equipo.dg }}</td>
+<td>{{ equipo.gf }}</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</body>
+
+</html>
